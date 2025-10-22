@@ -26,13 +26,12 @@ function Login({ onLoginSuccess }) {
 
     return (
         <Container component="main" maxWidth="xs">
-            <Box
-                sx={{
-                    minHeight: '100vh',
-                    marginTop: 8,
+            <Box sx={{
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: '100vh',
                 }}
             >
                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -83,8 +82,7 @@ function Login({ onLoginSuccess }) {
                         </Box>
                     </CardContent>
                 </Card>
-                <Box sx={{ flexGrow: 1 }} />
-                <Copyright sx={{ mt: 8, mb: 4 }} />
+                <Copyright sx={{ mt: 5, mb: 4 }} />
             </Box>
         </Container>
     );

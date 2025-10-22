@@ -67,10 +67,7 @@ function DiskDetailCard({ disk, onRun, onCleanup, onNavigateToFiles, onEdit }) {
         </Button>
         <Box sx={{ flexGrow: 1 }} />
         <Button size="small" onClick={() => onNavigateToFiles('/files', { state: { initialPath: disk.source_dir } })}>
-          View Unsorted
-        </Button>
-        <Button size="small" onClick={() => onNavigateToFiles('/files', { state: { initialPath: disk.sorted_dir } })}>
-          View Sorted
+          Broese Files
         </Button>
         <Button size="small" onClick={onEdit}>Edit</Button>
       </CardActions>

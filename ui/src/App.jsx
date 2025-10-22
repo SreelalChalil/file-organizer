@@ -134,6 +134,7 @@ function AppContent() {
   if (!isLoggedIn) {
     return (
       <ThemeProvider theme={appTheme}>
+        <CssBaseline />
         <Login onLoginSuccess={handleLoginSuccess} />
       </ThemeProvider>
     );

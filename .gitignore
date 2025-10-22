@@ -12,9 +12,6 @@ __pycache__/
 env/
 venv/
 
-._*
-.DS_Store
-
 # Frontend build output
 ui/build/
 ui/dist/
