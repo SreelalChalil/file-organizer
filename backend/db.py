@@ -17,6 +17,7 @@ import sqlite3
 
 
 def _get_conn(db_path: Path) -> sqlite3.Connection:
+    """Gets a connection to the SQLite database, creating it if it doesn't exist."""
     db_path.parent.mkdir(parents=True, exist_ok=True)
     # If the database doesn't exist, connect to it (which creates the file)
     # and then immediately initialize the schema.
@@ -27,6 +28,7 @@ def _get_conn(db_path: Path) -> sqlite3.Connection:
 
 
 def init_db(db_path: Path, clear_existing: bool = False):
+    """Initializes the database schema. Creates tables if they don't exist."""
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(db_path))
     cur = conn.cursor()
@@ -74,6 +76,7 @@ def init_db(db_path: Path, clear_existing: bool = False):
 
 
 def load_config_from_db(db_path: Path) -> Dict:
+    """Loads all categories and keywords from the DB into a dictionary."""
     conn = _get_conn(db_path)
     cur = conn.cursor()
 
@@ -92,6 +95,7 @@ def load_config_from_db(db_path: Path) -> Dict:
 
 
 def import_from_json(db_path: Path, json_path: Path):
+    """Imports categories and keywords from a JSON file, replacing all existing data."""
     with open(json_path) as f:
         categories_data = json.load(f)
     # This function is designed to be atomic and handles the array format.
@@ -100,6 +104,7 @@ def import_from_json(db_path: Path, json_path: Path):
 
 
 def add_category(db_path: Path, name: str, priority: int, target_dir: str):
+    """Adds a new category. Ignores if a category with the same name already exists."""
     conn = _get_conn(db_path)
     cur = conn.cursor()
     cur.execute("INSERT OR IGNORE INTO categories (name, priority, target_dir) VALUES (?, ?, ?)", (name, priority, target_dir))
@@ -108,6 +113,7 @@ def add_category(db_path: Path, name: str, priority: int, target_dir: str):
 
 
 def add_keyword(db_path: Path, category_name: str, keyword: str):
+    """Adds a keyword to an existing category."""
     conn = _get_conn(db_path)
     cur = conn.cursor()
     cur.execute("SELECT id FROM categories WHERE name = ?", (category_name,))
@@ -122,6 +128,7 @@ def add_keyword(db_path: Path, category_name: str, keyword: str):
 
 
 def list_categories(db_path: Path):
+    """Lists all categories with their associated keywords."""
     conn = _get_conn(db_path)
     cur = conn.cursor()
     cur.execute("SELECT id, name, priority, target_dir FROM categories ORDER BY priority DESC, name")
@@ -146,6 +153,7 @@ def list_categories(db_path: Path):
 
 
 def delete_disk(db_path: Path, name: str):
+    """Deletes a disk configuration by name."""
     conn = _get_conn(db_path)
     cur = conn.cursor()
     cur.execute("DELETE FROM disks WHERE name = ?", (name,))
@@ -154,6 +162,7 @@ def delete_disk(db_path: Path, name: str):
 
 
 def delete_category(db_path: Path, name: str):
+    """Deletes a category and all its associated keywords by name."""
     conn = _get_conn(db_path)
     cur = conn.cursor()
     cur.execute("SELECT id FROM categories WHERE name = ?", (name,))
@@ -170,6 +179,7 @@ def delete_category(db_path: Path, name: str):
 
 
 def update_disk(db_path: Path, name: str, source_dir: str, sorted_dir: str, schedule: str = None):
+    """Updates the paths and schedule for an existing disk."""
     conn = _get_conn(db_path)
     cur = conn.cursor()
     cur.execute("UPDATE disks SET source_dir = ?, sorted_dir = ?, schedule = ? WHERE name = ?", (source_dir, sorted_dir, schedule, name))
@@ -178,6 +188,7 @@ def update_disk(db_path: Path, name: str, source_dir: str, sorted_dir: str, sche
 
 
 def update_category(db_path: Path, name: str, priority: int, target_dir: str):
+    """Updates the priority and target directory for an existing category."""
     conn = _get_conn(db_path)
     cur = conn.cursor()
     cur.execute("UPDATE categories SET priority = ?, target_dir = ? WHERE name = ?", (priority, target_dir, name))
@@ -243,6 +254,7 @@ def merge_categories_from_data(db_path: Path, categories_data: list):
 
 
 def get_disks(db_path: Path):
+    """Retrieves all disk configurations from the database."""
     conn = _get_conn(db_path)
     cur = conn.cursor()
     cur.execute("SELECT name, source_dir, sorted_dir, schedule FROM disks")
@@ -252,6 +264,7 @@ def get_disks(db_path: Path):
 
 
 def upsert_disk(db_path: Path, name: str, source_dir: str, sorted_dir: str, schedule: str = None):
+    """Inserts a new disk or updates an existing one based on its name."""
     conn = _get_conn(db_path)
     cur = conn.cursor()
     # Use UPSERT: try insert, on conflict(name) update
@@ -264,6 +277,7 @@ def upsert_disk(db_path: Path, name: str, source_dir: str, sorted_dir: str, sche
 
 
 def create_run(db_path: Path, disk_name: str, source_path: str, log_file: str) -> int:
+    """Creates a new record for a file organization run and returns its ID."""
     conn = _get_conn(db_path)
     cur = conn.cursor()
     cur.execute("INSERT INTO runs (disk_name, source_path, status, start_ts, log_file) VALUES (?, ?, ?, ?, ?)",
@@ -275,6 +289,7 @@ def create_run(db_path: Path, disk_name: str, source_path: str, log_file: str) -
 
 
 def update_run_status(db_path: Path, run_id: int, status: str, files_moved: int):
+    """Updates the status, files moved count, and end time for a run."""
     conn = _get_conn(db_path)
     cur = conn.cursor()
     cur.execute("UPDATE runs SET status = ?, files_moved = ?, end_ts = ? WHERE id = ?",
@@ -284,6 +299,7 @@ def update_run_status(db_path: Path, run_id: int, status: str, files_moved: int)
 
 
 def list_runs(db_path: Path):
+    """Lists all historical runs, ordered by the most recent first."""
     conn = _get_conn(db_path)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
@@ -294,6 +310,7 @@ def list_runs(db_path: Path):
 
 
 def get_run(db_path: Path, run_id: int):
+    """Retrieves a single run's details by its ID."""
     conn = _get_conn(db_path)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()

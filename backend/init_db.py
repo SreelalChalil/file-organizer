@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""Command-line script to initialize the database.
+
+This script can create the database schema and optionally import an initial keyword configuration from a JSON file."""
 from pathlib import Path
 import argparse
 import logging
@@ -6,6 +9,7 @@ from db import init_db, import_from_json
 
 
 def main():
+    """Parses command-line arguments and initializes the database."""
     p = argparse.ArgumentParser()
     p.add_argument("--db", type=Path, default=Path("/var/lib/data_organizer/config.db"), help="Path to sqlite DB")
     p.add_argument("--import-config", type=Path, help="Path to keyword JSON to import into DB")

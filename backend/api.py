@@ -94,10 +94,20 @@ def _execute_run(disk_name: str, source_dir: Path, db_path: Path, db_run_id: int
 
 @app.route('/api/health', methods=['GET'])
 def health():
+    """Health check endpoint.
+    
+    Returns:
+        JSON: {'status': 'ok'}
+    """
     return jsonify({'status': 'ok'})
 
 @app.route('/api/login', methods=['POST'])
 def api_login():
+    """Authenticates the admin user.
+
+    Expects a JSON body with 'username' and 'password'.
+    The username must be 'admin' and the password must match the ADMIN_PASSWORD env var.
+    """
     data = request.get_json(force=True)
     username = data.get('username', '').strip()
     password = data.get('password', '') # Passwords should not be stripped
@@ -112,6 +122,11 @@ def api_login():
 
 @app.route('/api/version', methods=['GET'])
 def api_version():
+    """Returns the application version.
+    
+    Returns:
+        JSON: {'version': 'x.y.z'}
+    """
     return jsonify({'version': APP_VERSION})
 
 @app.route('/api/host-info', methods=['GET'])
@@ -128,7 +143,14 @@ def api_host_info():
 
 @app.route('/api/files', methods=['GET'])
 def api_list_files():
-    """Lists files in a given directory."""
+    """Lists files and directories at a given path.
+
+    The path must be within the '/mnt' directory for security.
+
+    Query Parameters:
+        path (str): The directory path to list.
+
+    """
     path_param = request.args.get('path', '').strip()
     if not path_param:
         return jsonify({'error': 'path parameter is required'}), 400
@@ -171,7 +193,13 @@ def api_list_files():
 
 @app.route('/api/files', methods=['PUT'])
 def api_rename_file():
-    """Renames a file or directory."""
+    """Renames a file or directory.
+
+    Expects a JSON body with 'path' and 'newName'.
+    Both old and new paths are restricted to be within '/mnt'.
+
+    Returns 409 if the destination path already exists.
+    """
     data = request.get_json(force=True)
     path_param = data.get('path', '').strip()
     new_name = data.get('newName', '').strip()
@@ -206,7 +234,14 @@ def api_rename_file():
 
 @app.route('/api/files', methods=['DELETE'])
 def api_delete_file():
-    """Deletes a file or an empty directory."""
+    """Deletes a file or an empty directory.
+
+    The path must be within the '/mnt' directory for security.
+    Directories must be empty to be deleted.
+
+    Query Parameters:
+        path (str): The path to the file or directory to delete.
+    """
     path_param = request.args.get('path', '').strip()
     if not path_param:
         return jsonify({'error': 'path parameter is required'}), 400
@@ -244,7 +279,14 @@ def api_delete_file():
 
 @app.route('/api/nfo', methods=['GET', 'POST', 'DELETE'])
 def api_nfo_handler():
-    """Handles GET, POST, and DELETE for .nfo files associated with a media file."""
+    """Handles GET, POST, and DELETE for .nfo files associated with a media file.
+
+    The path must be within the '/mnt' directory for security.
+    - GET: Reads the content of the .nfo file for the given media file path.
+    - POST: Writes content to the .nfo file for the given media file path.
+    - DELETE: Deletes the .nfo file for the given media file path.
+
+    """
     base_path = Path('/mnt').resolve()
 
     if request.method == 'GET':
@@ -299,6 +341,11 @@ def api_nfo_handler():
 
 @app.route('/api/disks', methods=['GET'])
 def api_list_disks():
+    """Lists all configured disks and their storage usage.
+
+    For each disk, it provides total, used, and free space for both the
+    source and sorted directories.
+    """
     try:
         disks_data = get_disks(DB_PATH)
         for disk in disks_data:
@@ -324,7 +371,12 @@ def api_list_disks():
 
 @app.route('/api/validate-path', methods=['GET'])
 def api_validate_path():
-    """Validates a given path and returns its status."""
+    """Validates if a given path exists, is a directory, and is readable/writable.
+
+    Query Parameters:
+        path (str): The absolute path to validate on the server's filesystem.
+
+    """
     path_param = request.args.get('path', '').strip()
     if not path_param:
         return jsonify({'error': 'path parameter is required'}), 400
@@ -373,6 +425,12 @@ def _validate_disk_paths(paths: list[str]) -> tuple[Response, int] | None:
 
 @app.route('/api/disks', methods=['POST'])
 def api_add_disk():
+    """Adds a new disk configuration.
+
+    Expects a JSON body with 'name', 'source', and 'sorted' paths.
+    The paths are validated for existence and permissions before saving.
+
+    """
     data = request.get_json(force=True)
     name = data.get('name', '').strip()
     source = data.get('source', '').strip()
@@ -392,6 +450,13 @@ def api_add_disk():
 
 @app.route('/api/disks/<name>', methods=['PUT'])
 def api_update_disk(name):
+    """Updates an existing disk configuration.
+
+    The disk is identified by its 'name' in the URL path.
+    Expects a JSON body with 'source' and 'sorted' paths.
+    The paths are validated for existence and permissions before saving.
+
+    """
     data = request.get_json(force=True)
     source = data.get('source', '').strip()
     sorted_dir = data.get('sorted', '').strip()
@@ -410,6 +475,11 @@ def api_update_disk(name):
 
 @app.route('/api/disks/<name>', methods=['DELETE'])
 def api_delete_disk(name):
+    """Deletes a disk configuration.
+
+    The disk is identified by its 'name' in the URL path.
+
+    """
     try:
         delete_disk(DB_PATH, name)
     except sqlite3.OperationalError:
@@ -418,6 +488,7 @@ def api_delete_disk(name):
 
 @app.route('/api/keywords', methods=['GET'])
 def api_get_keywords():
+    """Lists all keyword categories and their associated keywords."""
     try:
         cats = list_categories(DB_PATH)
     except sqlite3.OperationalError:
@@ -426,6 +497,12 @@ def api_get_keywords():
 
 @app.route('/api/keywords', methods=['POST'])
 def api_upsert_keyword():
+    """Adds or updates a keyword category.
+
+    If a category with the given name exists, it's updated. Otherwise, it's created.
+    Expects a JSON body with 'name', 'priority', 'target', and a list of 'keywords'.
+
+    """
     data = request.get_json(force=True)
     name = data.get('name', '').strip()
     priority = int(data.get('priority', 0))
@@ -439,6 +516,11 @@ def api_upsert_keyword():
 
 @app.route('/api/keywords/<name>', methods=['DELETE'])
 def api_delete_keyword(name):
+    """Deletes a keyword category.
+
+    The category is identified by its 'name' in the URL path.
+
+    """
     try:
         ok = delete_category(DB_PATH, name)
     except sqlite3.OperationalError:
@@ -473,6 +555,7 @@ def api_import_keywords():
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
     file = request.files['file']
+    # 'replace' is a destructive operation, so we default to the safer 'merge'.
     mode = request.args.get('mode', 'merge') # Default to safe merge
     data = json.load(file)
 
@@ -486,7 +569,12 @@ def api_import_keywords():
 
 @app.route('/api/cleanup-empty-dirs', methods=['POST'])
 def api_cleanup_empty_dirs():
-    """Deletes a list of directories if they are empty."""
+    """Deletes a list of directories if they are empty.
+
+    Expects a JSON body with a 'paths' array.
+    All paths must be within the '/mnt' directory for security.
+
+    """
     data = request.get_json(force=True)
     dir_paths = data.get('paths', [])
     if not dir_paths:
@@ -528,6 +616,14 @@ def api_get_empty_dirs(name):
 
 @app.route('/api/run', methods=['POST'])
 def api_run():
+    """Starts a file organization run in a background thread.
+
+    A run can be started for a pre-configured disk or a custom source path.
+    Expects a JSON body with either 'disk' (name) or 'source' (path).
+    A 'dry_run' boolean flag can also be provided.
+
+    Returns 409 if a run is already in progress.
+    """
     data = request.get_json(force=True)
 
     if not isinstance(data, dict):
@@ -572,11 +668,13 @@ def api_run():
 
 @app.route('/api/status', methods=['GET'])
 def api_status():
+    """Returns the status of the background organizer task."""
     with TASK_LOCK:
         return jsonify(TASK_STATUS)
 
 @app.route('/api/runs', methods=['GET'])
 def api_get_runs():
+    """Lists the history of all organization runs."""
     from app.db import list_runs
     runs = list_runs(DB_PATH)
     return jsonify(runs)
@@ -584,6 +682,12 @@ def api_get_runs():
 @app.route('/api/runs/<int:run_id>', methods=['GET'])
 def api_get_run_log(run_id):
     from app.db import get_run
+    """Retrieves the complete log file for a specific run as plain text.
+
+    The run is identified by its 'run_id' in the URL path.
+    This is suitable for downloading the full log after a run is complete.
+
+    """
     run_info = get_run(DB_PATH, run_id)
     if not run_info or not run_info.get('log_file'):
         return jsonify({'error': 'not found'}), 404
@@ -603,6 +707,12 @@ def api_get_run_log(run_id):
 
 @app.route('/stream_run_logs/<int:run_id>')
 def stream_run_logs(run_id):
+    """Streams log updates for a specific run using Server-Sent Events (SSE).
+
+    The run is identified by its 'run_id' in the URL path.
+    The stream ends when the run is no longer in the 'running' state.
+
+    """
     from app.db import get_run
     run_info = get_run(DB_PATH, run_id)
     if not run_info or not run_info.get('log_file'):
@@ -638,6 +748,11 @@ def stream_run_logs(run_id):
 
 @app.route('/stream_logs')
 def stream_logs():
+    """Streams the main application log file using Server-Sent Events (SSE).
+
+    This tails the global 'organize_files.log' and sends new lines to the client.
+
+    """
     def event_stream():
         import time
         # Continuously tail the log file
