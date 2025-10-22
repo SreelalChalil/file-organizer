@@ -42,7 +42,7 @@ export default function RunLogModal({ runId, open, onClose }) {
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>Organization Run Logs (Run ID: {runId})</DialogTitle>
       <DialogContent>
-        <Paper sx={{ p: 2, fontFamily: 'monospace', whiteSpace: 'pre-wrap', maxHeight: '60vh', overflow: 'auto', bgcolor: '#f5f5f5' }}>
+        <Paper sx={{ p: 2, fontFamily: 'monospace', whiteSpace: 'pre-wrap', maxHeight: '60vh', overflow: 'auto', bgcolor: 'background.default' }}>
           {logs.map((log, i) => <div key={i}>{log}</div>)}
           <div ref={logsEndRef} />
           {!isComplete && <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}><CircularProgress size={16} sx={{ mr: 1 }} /><Typography variant="caption">Running...</Typography></Box>}

@@ -25,7 +25,7 @@ function LogViewer({ runId, open, onClose }) {
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>Logs for Run #{runId}</DialogTitle>
       <DialogContent>
-        <Paper sx={{ p: 2, fontFamily: 'monospace', whiteSpace: 'pre-wrap', maxHeight: '60vh', overflow: 'auto' }}>
+        <Paper sx={{ p: 2, fontFamily: 'monospace', whiteSpace: 'pre-wrap', maxHeight: '60vh', overflow: 'auto', bgcolor: 'background.default' }}>
           {logContent}
         </Paper>
       </DialogContent>
