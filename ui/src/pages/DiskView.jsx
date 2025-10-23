@@ -58,16 +58,17 @@ function DiskDetailCard({ disk, onRun, onCleanup, onNavigateToFiles, onEdit }) {
         <UsageBar title="Source Usage" usage={disk.usage?.source} />
         <UsageBar title="Sorted Usage" usage={disk.usage?.sorted} />
       </CardContent>
-      <CardActions>
+      <CardActions sx={{ p: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
         <Button variant="contained" color="primary" onClick={onRun}>
           Run Organization
         </Button>
         <Button variant="outlined" color="secondary" onClick={() => onCleanup(disk.name)}>
           Cleanup Empty Folders
         </Button>
-        <Box sx={{ flexGrow: 1 }} />
-        <Button size="small" onClick={() => onNavigateToFiles('/files', { state: { initialPath: disk.source_dir } })}>
-          Broese Files
+        {/* This Box will push the following buttons to the right on wider screens */}
+        <Box sx={{ flexGrow: 1, minWidth: { xs: '100%', sm: 'auto' } }} />
+        <Button size="small" onClick={() => onNavigateToFiles('/files', { query: { path: disk.source_dir } })}>
+          Browse Files
         </Button>
         <Button size="small" onClick={onEdit}>Edit</Button>
       </CardActions>

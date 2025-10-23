@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
-  Paper, Table, TableBody, TableCell, TableContainer, TableHead, Container,
-  TableRow, TextField, Typography, Chip, IconButton, Menu, MenuItem, Snackbar, Alert,
-  TableSortLabel
+  Paper, Container, TextField, Typography, Chip, IconButton, Menu, MenuItem,
+  Snackbar, Alert, Card, CardContent, CardHeader, Grid,
+  FormControl, InputLabel, Select, Tooltip
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
+import SortIcon from '@mui/icons-material/Sort';
 
 function KeywordFormModal({ open, onClose, onSave, category }) {
   const [form, setForm] = useState({ name: '', priority: 0, target: '', keywords: '' });
@@ -50,7 +53,7 @@ export default function Keywords({ onUpdate }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [filter, setFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [order, setOrder] = useState('desc');
   const [orderBy, setOrderBy] = useState('priority');
   const [menuTargetCategory, setMenuTargetCategory] = useState(null);
@@ -150,14 +153,6 @@ export default function Keywords({ onUpdate }) {
     setOrderBy(property);
   };
 
-  const headCells = [
-    { id: 'name', label: 'Rule Name' },
-    { id: 'priority', label: 'Priority' },
-    { id: 'target_dir', label: 'Target Directory' },
-    { id: 'keywords', label: 'Keywords', disableSorting: true },
-    { id: 'actions', label: 'Actions', disableSorting: true },
-  ];
-
   function descendingComparator(a, b, orderBy) {
     if (b[orderBy] < a[orderBy]) return -1;
     if (b[orderBy] > a[orderBy]) return 1;
@@ -172,12 +167,12 @@ export default function Keywords({ onUpdate }) {
 
   const sortedAndFilteredCats = React.useMemo(() => {
     const filtered = cats.filter(c =>
-      c.name.toLowerCase().includes(filter.toLowerCase()) ||
-      c.target_dir.toLowerCase().includes(filter.toLowerCase()) ||
-      c.keywords.some(kw => kw.toLowerCase().includes(filter.toLowerCase()))
+      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.target_dir.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.keywords.some(kw => kw.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     return filtered.sort(getComparator(order, orderBy));
-  }, [cats, filter, order, orderBy]);
+  }, [cats, searchTerm, order, orderBy]);
 
   return (
     <Container maxWidth="lg">
@@ -191,75 +186,84 @@ export default function Keywords({ onUpdate }) {
           {snackbar.message}
         </Alert>
       </Snackbar>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">Manage File Categories</Typography>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' }, mb: 2, gap: 2 }}>
+        <Typography variant="h4" sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}>Manage File Categories</Typography>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
           <TextField
             label="Filter rules..."
             variant="outlined"
             size="small"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
           <Button variant="contained" onClick={() => { setEditingCategory(null); setModalOpen(true); }}>
             Add Category
           </Button>
-          <Button variant="outlined" onClick={handleExport}>Export to JSON</Button>
-          <Button variant="outlined" component="label">
-            Import from JSON
-            <input type="file" hidden accept=".json" onChange={handleImport} ref={fileInputRef} onClick={(e) => e.target.value = null} />
-          </Button>
         </Box>
       </Box>
 
-      <TableContainer component={Paper} sx={{ maxHeight: 'calc(100vh - 250px)' }}>
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              {headCells.map((headCell) => (
-                <TableCell
-                  key={headCell.id}
-                  sortDirection={orderBy === headCell.id ? order : false}
-                >
-                  {headCell.disableSorting ? headCell.label : (
-                    <TableSortLabel
-                      active={orderBy === headCell.id}
-                      direction={orderBy === headCell.id ? order : 'asc'}
-                      onClick={() => handleRequestSort(headCell.id)}
-                    >
-                      {headCell.label}
-                    </TableSortLabel>
-                  )}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedAndFilteredCats.map(c => (
-              <TableRow key={c.id}>
-                <TableCell>{c.name}</TableCell>
-                <TableCell>{c.priority}</TableCell>
-                <TableCell>{c.target_dir}</TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {c.keywords.map(kw => <Chip key={kw} label={kw} size="small" />)}
-                  </Box>
-                </TableCell>
-                <TableCell align="right">
-                  <IconButton
-                    aria-label="more"
-                    aria-controls="long-menu"
-                    aria-haspopup="true"
-                    onClick={(e) => handleMenuOpen(e, c)}
-                  >
+      <Paper sx={{ p: 2, mb: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+        <SortIcon color="action" />
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <InputLabel>Sort by</InputLabel>
+          <Select
+            native
+            value={orderBy}
+            label="Sort by"
+            onChange={(e) => handleRequestSort(e.target.value)}
+          >
+            <option value="priority">Priority</option>
+            <option value="name">Rule Name</option>
+            <option value="target_dir">Target Directory</option>
+          </Select>
+        </FormControl>
+        <Tooltip title={`Sort ${order === 'asc' ? 'Descending' : 'Ascending'}`}>
+          <Button
+            variant="outlined"
+            onClick={() => setOrder(order === 'asc' ? 'desc' : 'asc')}
+            sx={{ textTransform: 'capitalize' }}
+          >
+            {order}
+          </Button>
+        </Tooltip>
+        <Box sx={{ flexGrow: 1 }} />
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          <Tooltip title="Export to JSON">
+            <IconButton onClick={handleExport}><FileDownloadIcon /></IconButton>
+          </Tooltip>
+          <Tooltip title="Import from JSON">
+            <IconButton component="label"><FileUploadIcon />
+            <input type="file" hidden accept=".json" onChange={handleImport} ref={fileInputRef} onClick={(e) => e.target.value = null} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Paper>
+
+      <Grid container spacing={2}>
+        {sortedAndFilteredCats.map(c => (
+          <Grid item xs={12} sm={6} md={4} key={c.id}>
+            <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <CardHeader
+                action={
+                  <IconButton aria-label="settings" onClick={(e) => handleMenuOpen(e, c)}>
                     <MoreVertIcon />
                   </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                }
+                title={c.name}
+                subheader={`Priority: ${c.priority}`}
+              />
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>Target:</Typography>
+                <Typography variant="body2" sx={{ wordBreak: 'break-all' }}><code>{c.target_dir}</code></Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 2, mb: 1 }}>Keywords:</Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {c.keywords.map(kw => <Chip key={kw} label={kw} size="small" />)}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
 
       <Menu
         anchorEl={anchorEl}

@@ -1,6 +1,6 @@
 {
-  "name": "MyWebSite",
-  "short_name": "MySite",
+  "name": "File Organizer",
+  "short_name": "FileOrg",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

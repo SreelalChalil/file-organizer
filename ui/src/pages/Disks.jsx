@@ -183,12 +183,18 @@ export default function Disks({ onUpdate, onNavigate, context }) {
           {snackbar.message}
         </Alert>
       </Snackbar>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">Manage Disks</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' }, mb: 2, gap: 2 }}>
+        <Typography variant="h4" sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}>Manage Disks</Typography>
         <Button variant="contained" onClick={() => { setEditingDisk(null); setModalOpen(true); }}>Add Disk</Button>
       </Box>
 
-      <TableContainer component={Paper} sx={{ maxHeight: 'calc(100vh - 220px)' }}>
+      <TableContainer component={Paper} sx={{ 
+        maxHeight: { 
+          xs: 'calc(100vh - 280px)', // Adjust height for mobile
+          sm: 'calc(100vh - 220px)' 
+        },
+        overflow: 'auto' // Ensure horizontal scrolling
+      }}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>

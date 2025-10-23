@@ -65,7 +65,7 @@ export default function Logs() {
   return (
     <Container maxWidth="lg">
       <Typography variant="h4" gutterBottom>Run History</Typography>
-      <TableContainer component={Paper} sx={{ maxHeight: 'calc(100vh - 220px)' }}>
+      <TableContainer component={Paper} sx={{ maxHeight: 'calc(100vh - 220px)', overflow: 'auto' }}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>

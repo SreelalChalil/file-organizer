@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   AppBar, Toolbar, Typography, Button, Container, IconButton,
   Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Box, CssBaseline,
-  useTheme, useMediaQuery, ThemeProvider, createTheme
-} from '@mui/material';
+  useTheme, useMediaQuery, ThemeProvider, createTheme, Paper
+} from '@mui/material'; // Added BottomNavigation, BottomNavigationAction
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -11,6 +11,7 @@ import StorageIcon from '@mui/icons-material/Storage';
 import LabelIcon from '@mui/icons-material/Label';
 import HistoryIcon from '@mui/icons-material/History';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
+import LogoutIcon from '@mui/icons-material/Logout'; // Import LogoutIcon
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import logo from './assets/logo.svg';
 
@@ -29,6 +30,8 @@ import GettingStarted from './pages/GettingStarted';
 import DiskView from './pages/DiskView';
 import FileBrowserPage from './pages/FileBrowserPage';
 import StatusBar from './components/StatusBar';
+import BottomNavigation from '@mui/material/BottomNavigation';
+import BottomNavigationAction from '@mui/material/BottomNavigationAction';
 
 const drawerWidth = 240;
 
@@ -178,36 +181,24 @@ function AppContent() {
         }}
       >
         <Toolbar>
-          {isMobile && (
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={() => setDrawerOpen(!drawerOpen)}
-              sx={{ mr: 2 }}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
           <Box
             component="img"
             src={logo}
             alt="File Organizer Logo"
-            sx={{ height: 32, mr: 1.5, display: { xs: 'none', sm: 'block' } }}
+            sx={{ height: 32, mr: 1.5 }}
           />
-          <Typography variant="h6" sx={{ flexGrow: 1, display: { xs: 'none', sm: 'block' } }}>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}> {/* Always display app name, flexGrow pushes subsequent items right */}
             File Organizer
           </Typography>
           <IconButton sx={{ ml: 1 }} onClick={colorMode.toggleColorMode} color="inherit">
             {appTheme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
           </IconButton>
-          <Button color="inherit" onClick={handleLogout}>Logout</Button>
+          <IconButton color="inherit" onClick={handleLogout} aria-label="logout"><LogoutIcon /></IconButton>
         </Toolbar>
       </AppBar>
-      <Drawer
-        variant={isMobile ? 'temporary' : 'permanent'}
-        open={isMobile ? drawerOpen : true}
-        onClose={() => setDrawerOpen(false)}
+      {!isMobile && (
+        <Drawer
+        variant='permanent'
         sx={{
           width: drawerWidth,
           flexShrink: 0,
@@ -217,15 +208,15 @@ function AppContent() {
             backgroundColor: (theme) => theme.palette.mode === 'dark' ? theme.palette.background.default : theme.palette.background.paper,
           },
         }}
-      >
-        {drawerContent}
-      </Drawer>
+        >
+          {drawerContent}
+        </Drawer>)}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          pb: 10,
+          p: { xs: 2, sm: 3 },
+          pb: { xs: 10, sm: 3 }, // Add bottom padding only on mobile to account for bottom nav
           marginLeft: isMobile ? 0 : `${drawerWidth}px`, // Explicitly set margin based on mobile state
           transition: (theme) => theme.transitions.create('margin', {
             easing: theme.transitions.easing.sharp,
@@ -247,8 +238,23 @@ function AppContent() {
           <Route path="/files" element={<FileBrowserPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        <StatusBar />
+        {!isMobile && <StatusBar />} {/* Hide status bar on mobile */}
       </Box>
+      {isMobile && ( // Show bottom navigation on mobile
+        <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: (theme) => theme.zIndex.appBar + 1 }} elevation={3}>
+          <BottomNavigation
+            showLabels
+            value={location.pathname}
+            onChange={(event, newValue) => {
+              navigate(newValue);
+            }}
+          >
+            {menuItems.map((item) => (
+              <BottomNavigationAction key={item.path} label={item.text} value={item.path} icon={item.icon} />
+            ))}
+          </BottomNavigation>
+        </Paper>
+      )}
     </ThemeProvider>
   );
 }
